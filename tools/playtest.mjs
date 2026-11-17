@@ -271,11 +271,16 @@ async function main() {
     }
     const afterHospital = await game('({ health: g.player.health, near: Math.hypot(g.player.x - g.layout.placeById.hospital.x, g.player.z - g.layout.placeById.hospital.z) })');
     check(back && afterHospital.health === 100 && afterHospital.near < 8, 'discharged from Bayview General at full health');
-    // Let the world run a few seconds more and make sure the frame loop is alive.
-    const t0 = await game('g.time');
-    await sleep(2000);
-    const t1 = await game('g.time');
-    check(t1 > t0 + 0.5, `game clock advanced ${(t1 - t0).toFixed(2)} s in 2 s of waiting`);
+    // Let the world run on and make sure the frame loop is alive (software rendering can stall for a moment).
+    const c0 = await game('({ t: g.time, f: g.frames })');
+    let c1 = c0;
+    let waited = 0;
+    while (waited < 15000 && c1.t < c0.t + 0.5) {
+      await sleep(1000);
+      waited += 1000;
+      c1 = await game('({ t: g.time, f: g.frames })');
+    }
+    check(c1.t >= c0.t + 0.5 && c1.f > c0.f, `game clock advanced ${(c1.t - c0.t).toFixed(2)} s over ${c1.f - c0.f} frames in ${waited / 1000} s of waiting`);
   } catch (err) {
     failures.push(`exception in the playtest: ${err.message}`);
     console.error(err);
