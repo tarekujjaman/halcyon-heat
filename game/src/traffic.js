@@ -38,7 +38,10 @@ export function createTraffic(layout, fleet, effects) {
           perModel[model] = (perModel[model] || 0) + 1;
           if (perModel[model] > 12) continue;
           const v = fleet.spawn(model, p.x, p.z, Math.atan2(p.dx, p.dz), model === 'taxi' ? '#ffd23f' : prng.pick(PAINTS), 'parked');
-          if (v) parked.push(v);
+          if (v) {
+            v.permanent = true;
+            parked.push(v);
+          }
         }
       }
     }
@@ -48,7 +51,10 @@ export function createTraffic(layout, fleet, effects) {
     for (const [model, color, offset] of [['sedan', '#1f6fd0', 12], ['coupe', '#ffd23f', -14], ['bike', '#e3342f', 24]]) {
       const p = lanePoint(near.edge, true, near.t + offset, LANES.park);
       const v = fleet.spawn(model, p.x, p.z, Math.atan2(p.dx, p.dz), color, 'parked');
-      if (v) parked.push(v);
+      if (v) {
+        v.permanent = true;
+        parked.push(v);
+      }
     }
   };
 
@@ -177,6 +183,11 @@ export function createTraffic(layout, fleet, effects) {
       let count = 0;
       for (let i = fleet.vehicles.length - 1; i >= 0; i -= 1) {
         const v = fleet.vehicles[i];
+        // Abandoned cars (left by Sol, stood-down cruisers, finished mission cars) clear away far off.
+        if ((v.kind === 'parked' || v.kind === 'wreck') && !v.permanent && v.occupant !== 'player' && Math.hypot(v.x - px, v.z - pz) > 330) {
+          fleet.remove(v);
+          continue;
+        }
         if (v.kind !== 'traffic' || !v.ai) continue;
         count += 1;
         const d = Math.hypot(v.x - px, v.z - pz);

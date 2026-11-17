@@ -72,7 +72,7 @@ export const CAMERA = {
   footHeight: 1.9,
   carDistance: 8.5,
   carHeight: 3.2,
-  aimDistance: 2.4,
+  aimDistance: 3.1,
   sensitivity: 0.0022,
   fov: 62,
   near: 0.3,

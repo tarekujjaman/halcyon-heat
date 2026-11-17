@@ -122,7 +122,7 @@ export function stageShot(name, game) {
         const fz = Math.cos(car.yaw);
         const rx = -fz;
         const rz = fx;
-        const spots = [[-4.6, 9.5, 0.16], [3.6, 11.5, -0.14], [-0.8, 16.5, 0.05]];
+        const spots = [[-4.4, 6.2, 0.18], [3.9, 7.8, -0.16], [-0.9, 11.5, 0.05]];
         cruisers.forEach((c, k) => {
           const [side, back, turn] = spots[k];
           c.x = car.x - fx * back + rx * side;
