@@ -117,8 +117,7 @@ export function createFleet(scene, effectsRef = null) {
           const steer = wz > 0 ? v.steer : 0;
           setInstance(wheelMesh, base * 4 + k, px, v.y + r, pz, v.yaw + steer, r, r, r, v.wheelSpin, 0);
         });
-        for (let k = 4; k < (m.wheels.length < 4 ? 4 : 0); k += 1) hideInstance(wheelMesh, base * 4 + k);
-        if (m.wheels.length < 4) for (let k = m.wheels.length; k < 4; k += 1) hideInstance(wheelMesh, base * 4 + k);
+        for (let k = m.wheels.length; k < 4; k += 1) hideInstance(wheelMesh, base * 4 + k);
         const L = m.lights;
         const place = (idx, lx, ly, lz, color, sx = 1, sy = 1, sz = 1) => {
           const px = v.x + lx * cosY + lz * sinY;

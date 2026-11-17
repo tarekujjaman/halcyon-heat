@@ -49,6 +49,11 @@ async function main() {
       await client.send('Page.navigate', { url });
       await client.waitFor('window.__shotReady === true', 240000, 300);
       await sleep(400);
+      const pre = argValue('--pre');
+      if (pre) {
+        await client.eval(pre);
+        await sleep(300);
+      }
       const expression = argValue('--eval');
       if (expression) console.log(JSON.stringify(await client.eval(expression), null, 1));
       const { bytes, quality } = await captureUnderCap(client);

@@ -3,6 +3,7 @@
 // for the police, opens the map, starts the first mission, saves and loads, and fails on any
 // console error, page exception or broken expectation.
 //   node tools/playtest.mjs
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, serveStatic, watchErrors, sleep } from './cdp.mjs';
@@ -41,6 +42,12 @@ async function main() {
     await mouse('mouseReleased', x, y, button);
   };
   const game = (expr) => client.eval(`(() => { const g = window.__game; return ${expr}; })()`);
+  /** Keep a frame of real play for review under tmp/. */
+  const snapshot = async (name) => {
+    const { data } = await client.send('Page.captureScreenshot', { format: 'jpeg', quality: 80 });
+    mkdirSync(join(root, 'tmp'), { recursive: true });
+    writeFileSync(join(root, 'tmp', `playtest-${name}.jpg`), Buffer.from(data, 'base64'));
+  };
   const run = (statements) => client.eval(`(() => { const g = window.__game; ${statements}; return true; })()`);
   /** Wait until the game loop has rendered `n` more frames (the software renderer is slow). */
   const frames = async (n = 2) => {
@@ -69,6 +76,7 @@ async function main() {
     await frames(2);
     const walked = await game('Math.hypot(g.player.x - ' + start.x + ', g.player.z - ' + start.z + ')');
     check(walked > 3, `walked ${walked.toFixed(1)} m on foot`);
+    await snapshot('onfoot');
     // Look around with the mouse (drag).
     await mouse('mousePressed', 640, 400, 'left');
     for (let i = 0; i < 8; i += 1) await mouse('mouseMoved', 640 + i * 20, 400, 'left', { buttons: 1 });
@@ -124,6 +132,8 @@ async function main() {
       cops = await game('g.police.cruisers.length');
     }
     check(cops > 0, `${cops} police cruiser(s) dispatched`);
+    await sleep(3000);
+    await snapshot('wanted');
     // The map opens and closes with M.
     await tap('KeyM');
     check((await game('g.state')) === 'map', 'M opened the pause map');
@@ -200,6 +210,7 @@ async function main() {
     check(await game('g.missions.state.timer > 0'), 'the mission timer is running');
     // Drive the Mule to the marina: a short real drive, then place it at the marker and stop.
     await hold('KeyW', 1500);
+    await snapshot('mission-drive');
     const marina = await game('({ x: g.layout.placeById.marina.x, z: g.layout.placeById.marina.z })');
     await run(`const v = g.player.vehicle; v.x = ${marina.x} + 2; v.z = ${marina.z}; v.speed = 0; v.vLat = 0; g.player.x = v.x; g.player.z = v.z`);
     await frames(3);
@@ -226,6 +237,40 @@ async function main() {
     check((await game('g.activities.state.racers.length')) === 2, 'two AI racers lined up');
     await tap('KeyF');
     check(!(await game('!!g.activities.state.race')), 'leaving the car abandons the race');
+
+    // Getting busted: an officer next to a standing Sol makes the arrest; the hospital flow after a death.
+    const cashBefore = await game('g.economy.money');
+    await run('g.wanted.setStars(2); g.police.spawnOfficer(g.player.x + 1.2, g.player.z, 0)');
+    let busted = false;
+    for (let t = 0; t < 30 && !busted; t += 1) {
+      await sleep(500);
+      busted = (await game('g.state')) === 'busted';
+    }
+    check(busted, 'an officer arrested Sol while she stood still');
+    await sleep(600);
+    await snapshot('arrested');
+    let back = false;
+    for (let t = 0; t < 40 && !back; t += 1) {
+      await sleep(500);
+      back = (await game('g.state')) === 'playing';
+    }
+    const afterArrest = await game('({ money: g.economy.money, stars: g.wanted.stars, near: Math.hypot(g.player.x - g.layout.placeById.police.x, g.player.z - g.layout.placeById.police.z) })');
+    check(back && afterArrest.stars === 0 && afterArrest.near < 8, `released at the police station with the wanted level cleared (${afterArrest.near.toFixed(1)} m away)`);
+    check(afterArrest.money < cashBefore, `bail took a fee ($${cashBefore} -> $${afterArrest.money})`);
+    await run('g.onPlayerDeath("test")');
+    busted = false;
+    for (let t = 0; t < 10 && !busted; t += 1) {
+      await sleep(300);
+      busted = (await game('g.state')) === 'busted';
+    }
+    check(busted, 'dying starts the hospital flow');
+    back = false;
+    for (let t = 0; t < 40 && !back; t += 1) {
+      await sleep(500);
+      back = (await game('g.state')) === 'playing';
+    }
+    const afterHospital = await game('({ health: g.player.health, near: Math.hypot(g.player.x - g.layout.placeById.hospital.x, g.player.z - g.layout.placeById.hospital.z) })');
+    check(back && afterHospital.health === 100 && afterHospital.near < 8, 'discharged from Bayview General at full health');
     // Let the world run a few seconds more and make sure the frame loop is alive.
     const t0 = await game('g.time');
     await sleep(2000);
