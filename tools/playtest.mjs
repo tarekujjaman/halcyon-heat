@@ -182,14 +182,15 @@ async function main() {
     let stage = await game('g.missions.state.stage && g.missions.state.stage.type');
     check(stage === 'say', `reached Teo's garage, dialogue plays (stage ${stage})`);
     check((await game('document.getElementById("subtitle").textContent.length')) > 5, 'subtitle with a speaker name is showing');
-    // Let the dialogue finish (3.6 s a line) and the Mule appear.
-    for (let t = 0; t < 30 && stage === 'say'; t += 1) {
+    // Let the dialogue finish (3.6 s a line, four lines queued, game time runs slow headless) and the Mule appear.
+    for (let t = 0; t < 120 && stage === 'say'; t += 1) {
       await sleep(500);
       stage = await game('g.missions.state.stage && g.missions.state.stage.type');
     }
     check(stage === 'getcar', `the mission asks for the Mule (stage ${stage})`);
     const mule = await game('(() => { const v = g.missions.state.missionCars.get("mule"); return v && { x: v.x, z: v.z, yaw: v.yaw }; })()');
     check(!!mule, 'the Mule pickup was spawned at the garage');
+    if (!mule) throw new Error('no Mule to continue the mission with');
     await run(`g.player.setPosition(${mule.x} + Math.cos(${mule.yaw}) * 2.2, ${mule.z} - Math.sin(${mule.yaw}) * 2.2, ${mule.yaw})`);
     await frames(2);
     await tap('KeyF');

@@ -12,8 +12,8 @@ import { SLAB_HEIGHT } from './roads.js';
 
 const TILE = { glass: 9, tower: 10, stucco: 7, deco: 8, villa: 6, warehouse: 12, neon: 7 };
 
-/** Four walls (no roof or floor) of a w by h by d box, texture tiled every `tile` metres. */
-function walls(w, h, d, tile, x, y, z) {
+/** Four walls (no roof or floor) of a w by h by d box, texture tiled every `tile` metres, tinted. */
+function walls(w, h, d, tile, x, y, z, tint = '#ffffff') {
   const g = new THREE.BoxGeometry(w, h, d).toNonIndexed();
   const pos = g.attributes.position.array;
   const nor = g.attributes.normal.array;
@@ -37,7 +37,13 @@ function walls(w, h, d, tile, x, y, z) {
   out.setAttribute('normal', new THREE.BufferAttribute(n, 3));
   out.setAttribute('uv', new THREE.BufferAttribute(u, 2));
   out.translate(x, y + h / 2, z);
-  return out;
+  return colorize(out, tint);
+}
+
+/** A slight per-building tint so towers of one style do not look stamped from the same mould. */
+function wallTint(rng) {
+  const c = new THREE.Color().setHSL(rng.range(0, 1), rng.range(0.05, 0.25), rng.range(0.82, 0.98));
+  return `#${c.getHexString()}`;
 }
 
 export function buildBuildings(layout, textures) {
@@ -61,7 +67,12 @@ export function buildBuildings(layout, textures) {
   let billboardIndex = 0;
 
   const addBuilding = (style, x, z, w, d, h, roofColor, opts = {}) => {
-    byStyle[style].push(walls(w, h, d, TILE[style], x, y0, z));
+    byStyle[style].push(walls(w, h, d, TILE[style], x, y0, z, opts.tint || '#ffffff'));
+    if (opts.shopfront) {
+      // A dark glass ground floor with a slim awning: the street level reads as shops and lobbies.
+      details.push(box(w + 0.16, 4.2, d + 0.16, '#1f2d3a', x, y0 + 2.1, z));
+      details.push(box(w + 0.6, 0.18, d + 0.6, opts.shopfront, x, y0 + 4.3, z));
+    }
     details.push(box(w + 0.2, 0.5, d + 0.2, roofColor, x, y0 + h + 0.25, z));
     details.push(box(w, 0.4, 0.5, opts.parapet || roofColor, x, y0 + h + 0.7, z - d / 2 + 0.25));
     details.push(box(w, 0.4, 0.5, opts.parapet || roofColor, x, y0 + h + 0.7, z + d / 2 - 0.25));
@@ -149,8 +160,9 @@ export function buildBuildings(layout, textures) {
       const d = rng.range(30, 44);
       const h = rng.range(60, 125);
       details.push(box(b.w - 6, 6, b.d - 6, '#b5ada0', b.cx, y0 + 3, b.cz));
+      details.push(box(b.w - 5.6, 4.4, b.d - 5.6, '#1f2d3a', b.cx, y0 + 2.2, b.cz));
       obstacles.addBox(b.x0 + 3, b.z0 + 3, b.x1 - 3, b.z1 - 3, 6, 'building');
-      const t = addBuilding(style, b.cx, b.cz, w, d, h, roof, { parapet: '#dde3e8' });
+      const t = addBuilding(style, b.cx, b.cz, w, d, h, roof, { parapet: '#dde3e8', tint: wallTint(rng) });
       t.y = 6;
       roofDetails(rng, t, 'tower');
     } else {
@@ -162,7 +174,7 @@ export function buildBuildings(layout, textures) {
         const h = rng.range(28, 90);
         const x = b.cx + cx * (b.w / 4 - 1);
         const z = b.cz + cz * (b.d / 4 - 1);
-        const t = addBuilding(style, x, z, w, d, h, roof, { parapet: '#dde3e8' });
+        const t = addBuilding(style, x, z, w, d, h, roof, { parapet: '#dde3e8', tint: wallTint(rng), shopfront: rng.pick(['#7fd3e8', '#d9d2c4', '#f6c177']) });
         roofDetails(rng, t, 'tower');
       }
     }
@@ -177,7 +189,7 @@ export function buildBuildings(layout, textures) {
       const x = b.x0 + 2 + shopW * (k + 0.5);
       const h = rng.range(9, 16);
       const style = rng.pick(['neon', 'stucco', 'deco']);
-      const t = addBuilding(style, x, b.z1 - 9, shopW - 0.6, 16, h, rng.pick(['#4b2f5a', '#6b4a3a', '#3b3b44']));
+      const t = addBuilding(style, x, b.z1 - 9, shopW - 0.6, 16, h, rng.pick(['#4b2f5a', '#6b4a3a', '#3b3b44']), { tint: wallTint(rng), shopfront: rng.pick(['#ff6fb5', '#7fd3e8', '#ffb14a']) });
       roofDetails(rng, t, 'low');
       const [name, color] = neonNames[neonIndex % neonNames.length];
       neonIndex += 1;
@@ -190,7 +202,7 @@ export function buildBuildings(layout, textures) {
     for (let k = 0; k < backs; k += 1) {
       const x = b.x0 + 2 + backW * (k + 0.5);
       const h = rng.range(18, 34);
-      const t = addBuilding(rng.pick(['neon', 'stucco', 'tower']), x, b.z0 + 18, backW - 1, 32, h, rng.pick(['#4b2f5a', '#5c4a3a']));
+      const t = addBuilding(rng.pick(['neon', 'stucco', 'tower']), x, b.z0 + 18, backW - 1, 32, h, rng.pick(['#4b2f5a', '#5c4a3a']), { tint: wallTint(rng) });
       roofDetails(rng, t, 'low');
     }
     if (rng.chance(0.4)) addBillboard(b.x0 + 4, b.z0 + 3, Math.PI, rng);
@@ -206,7 +218,7 @@ export function buildBuildings(layout, textures) {
       const z = b.z0 + 3 + hw * (k + 0.5);
       const h = landmark ? rng.range(58, 72) : rng.range(22, 42);
       const colorRoof = rng.pick(['#f08ca0', '#8fd6c9', '#f6d58a', '#f3b48c']);
-      const t = addBuilding(landmark ? 'glass' : 'deco', b.cx + 8, z, landmark ? 30 : 34, landmark ? 36 : hw - 3, h, colorRoof, { parapet: '#fff4e6' });
+      const t = addBuilding(landmark ? 'glass' : 'deco', b.cx + 8, z, landmark ? 30 : 34, landmark ? 36 : hw - 3, h, colorRoof, { parapet: '#fff4e6', tint: wallTint(rng), shopfront: landmark ? null : '#f8f1e4' });
       roofDetails(rng, t, landmark ? 'tower' : 'low');
       details.push(box(10, 0.4, hw - 10, '#4fb5d9', b.x0 + 8, y0 + 0.2, z));
       details.push(box(14, 0.3, hw - 6, '#e9d7b4', b.x0 + 8, y0 + 0.05, z));
@@ -456,7 +468,7 @@ export function buildBuildings(layout, textures) {
     if (parts.length === 0) continue;
     const tex = textures.windows[style];
     const material = new THREE.MeshStandardMaterial({
-      map: tex.map, emissiveMap: tex.emissiveMap, emissive: new THREE.Color('#ffffff'), emissiveIntensity: 0.0,
+      map: tex.map, emissiveMap: tex.emissiveMap, emissive: new THREE.Color('#ffffff'), emissiveIntensity: 0.0, vertexColors: true,
       roughness: style === 'glass' ? 0.35 : 0.75, metalness: style === 'glass' ? 0.25 : 0.05,
     });
     const mesh = new THREE.Mesh(merge(parts), material);
