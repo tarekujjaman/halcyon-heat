@@ -242,6 +242,16 @@ export function createActivities(game) {
         if (Math.hypot(player.x - s.x, player.z - s.z) < (v ? 2.6 : 1.5)) api.collectShard(s);
       }
       // Race.
+      if (state.race && !v) {
+        hud.notify('Race abandoned', 'warn');
+        for (const racer of state.racers) if (racer.alive) fleet.remove(racer);
+        state.racers.length = 0;
+        state.race = null;
+        markers.remove('gate');
+        hud.setObjective(null);
+        hud.setTimer(null);
+        placeRaceMarkers();
+      }
       if (state.race) {
         const r = state.race;
         if (r.countdown > 0) {
@@ -267,16 +277,6 @@ export function createActivities(game) {
               const next = checkpointPoint(r.def, r.index);
               markers.set('gate', next.x, next.z, '#c58cff', 'gate');
             }
-          }
-          if (!v) {
-            hud.notify('Race abandoned', 'warn');
-            for (const racer of state.racers) if (racer.alive) fleet.remove(racer);
-            state.racers.length = 0;
-            state.race = null;
-            markers.remove('gate');
-            hud.setObjective(null);
-            hud.setTimer(null);
-            placeRaceMarkers();
           }
         }
       }

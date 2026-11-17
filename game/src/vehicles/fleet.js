@@ -21,7 +21,7 @@ const TAIL_NIGHT = new THREE.Color('#ff3030');
 
 export function createFleet(scene, effectsRef = null) {
   const models = buildVehicleModels();
-  const material = coloredMaterial({ roughness: 0.35, metalness: 0.45 });
+  const material = coloredMaterial({ roughness: 0.32, metalness: 0.12 });
   const bodies = {};
   const freeSlots = {};
   for (const [name, m] of Object.entries(models)) {

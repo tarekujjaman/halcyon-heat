@@ -102,14 +102,13 @@ export function stageShot(name, game) {
     prewarm(1);
     let i = 0;
     return {
-      steps: 150,
+      steps: 132,
       dt: 1 / 60,
       controls() {
         i += 1;
-        // Flat out, then a handbrake flick so the tail steps out in smoke, then catch it.
-        if (i < 70) return { throttle: 1, steer: 0, brake: 0, handbrake: 0 };
-        if (i < 100) return { throttle: 1, steer: 0.6, brake: 0, handbrake: 1 };
-        return { throttle: 1, steer: -0.35, brake: 0, handbrake: 1 };
+        // Flat out, then a handbrake flick so the tail steps out in smoke; the frame lands mid-slide.
+        if (i < 100) return { throttle: 1, steer: 0, brake: 0, handbrake: 0 };
+        return { throttle: 1, steer: 0.45, brake: 0, handbrake: 1 };
       },
       beforeHud() {
         wanted.state.searching = true;
@@ -123,7 +122,7 @@ export function stageShot(name, game) {
         const fz = Math.cos(car.yaw);
         const rx = -fz;
         const rz = fx;
-        const spots = [[-3.8, 8.5, 0.16], [3.6, 12, -0.14], [-0.2, 17.5, 0.05]];
+        const spots = [[-4.6, 9.5, 0.16], [3.6, 11.5, -0.14], [-0.8, 16.5, 0.05]];
         cruisers.forEach((c, k) => {
           const [side, back, turn] = spots[k];
           c.x = car.x - fx * back + rx * side;
@@ -143,9 +142,9 @@ export function stageShot(name, game) {
         // The helicopter hangs ahead and left with its light on the Marlin.
         police.heliState.active = true;
         police.heli.visible = true;
-        police.heliState.x = car.x - 13;
-        police.heliState.y = 21;
-        police.heliState.z = car.z - 40;
+        police.heliState.x = car.x - 9;
+        police.heliState.y = 16.5;
+        police.heliState.z = car.z - 50;
         police.heliState.yaw = Math.atan2(car.x - police.heliState.x, car.z - police.heliState.z);
         police.poseHelicopter(0.12);
         game.radio.state.station = 0;
@@ -153,7 +152,7 @@ export function stageShot(name, game) {
         hud.setObjective("Lose the cops before reaching Teo's garage");
         hud.setStars(4, true);
         hud.notify('Roadblock ahead on Ocean Drive', 'warn');
-        game.camera.snap(car.x + 2.8, 6.0, car.z + 19, car.x - 2.2, 1.0, car.z - 24);
+        game.camera.snap(car.x + 2.3, 5.4, car.z + 14, car.x - 0.8, 1.0, car.z - 24);
       },
     };
   }

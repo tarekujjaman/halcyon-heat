@@ -71,7 +71,7 @@ export function createSky(scene, renderer) {
   const ambient = new THREE.AmbientLight('#ffe0c0', 0.28);
   scene.add(ambient);
 
-  scene.fog = new THREE.Fog('#f7c9a0', 260, 1500);
+  scene.fog = new THREE.Fog('#f7c9a0', 380, 1600);
   scene.background = null;
 
   const sunDir = new THREE.Vector3();

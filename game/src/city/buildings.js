@@ -197,20 +197,27 @@ export function buildBuildings(layout, textures) {
   }
 
   function buildCoral(b, rng) {
-    // Pastel beach hotels with a pool deck toward the sea.
-    const hotels = rng.int(1, 2);
+    // Pastel beach hotels with a pool deck toward the sea; the north end of the strand gets two
+    // landmark towers so the drive has a skyline ahead.
+    const landmark = b.i === 0 && (b.j === 1 || b.j === 2);
+    const hotels = landmark ? 1 : rng.int(1, 2);
     const hw = (b.d - 6) / hotels;
     for (let k = 0; k < hotels; k += 1) {
       const z = b.z0 + 3 + hw * (k + 0.5);
-      const h = rng.range(22, 42);
+      const h = landmark ? rng.range(58, 72) : rng.range(22, 42);
       const colorRoof = rng.pick(['#f08ca0', '#8fd6c9', '#f6d58a', '#f3b48c']);
-      const t = addBuilding('deco', b.cx + 8, z, 34, hw - 3, h, colorRoof);
-      roofDetails(rng, t, 'low');
+      const t = addBuilding(landmark ? 'glass' : 'deco', b.cx + 8, z, landmark ? 30 : 34, landmark ? 36 : hw - 3, h, colorRoof, { parapet: '#fff4e6' });
+      roofDetails(rng, t, landmark ? 'tower' : 'low');
       details.push(box(10, 0.4, hw - 10, '#4fb5d9', b.x0 + 8, y0 + 0.2, z));
       details.push(box(14, 0.3, hw - 6, '#e9d7b4', b.x0 + 8, y0 + 0.05, z));
-      // Hotel name as a vertical-ish rooftop sign.
+      if (landmark) {
+        details.push(box(50, 6, 46, '#f3d8c4', b.cx + 8, y0 + 3, z));
+        obstacles.addBox(b.cx + 8 - 25, z - 23, b.cx + 8 + 25, z + 23, 6, 'building');
+      }
+      // Hotel name on the facade toward the ocean drive.
       const name = rng.pick(['SEABREEZE', 'HOTEL CORAL', 'THE STRAND', 'PALM COURT', 'SUNDECK INN', 'AZURE SUITES']);
-      addSign(name, rng.pick(['#ff6fb5', '#7fd3e8', '#ffd36e']), b.x0 + 8 - 8.5, y0 + h + 2.5, z, -Math.PI / 2, 9, 2.2, '#2a1830');
+      const faceX = landmark ? b.cx + 8 - 15.3 : b.x0 + 8 - 9.3;
+      addSign(name, rng.pick(['#ff6fb5', '#7fd3e8', '#ffd36e']), faceX, y0 + Math.min(h * 0.55, 18), z, -Math.PI / 2, 12, 2.8, '#2a1830');
     }
   }
 

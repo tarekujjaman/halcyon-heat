@@ -195,6 +195,7 @@ export function bootHalcyonHeat() {
   // ------------------------------------------------------------------ a new game, saving, loading
   function resetWorld() {
     if (player.vehicle) driving.exit();
+    missions.abort();
     police.reset();
     gangs.reset();
     wanted.clear();
@@ -570,6 +571,13 @@ export function bootHalcyonHeat() {
     for (let i = 0; i < shot.steps; i += 1) step(shot.dt, shot.controls());
     hud.clearNotes();
     shot.finish();
+    const hourOverride = Number(params.get('hour'));
+    if (params.get('hour') && Number.isFinite(hourOverride)) {
+      sky.setHour(hourOverride);
+      buildings.setNight(sky.night);
+      props.setNight(sky.night);
+      beach.setSun(sky.sunDir, sky.sunColor, sky.fogColor, sky.night);
+    }
     // Refresh what the staging touched after the last step: effects, car instances, figures, markers.
     effects.update(1 / 60, cam.camera);
     fleet.render(0, sky.night, game.time);

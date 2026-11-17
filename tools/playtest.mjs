@@ -132,11 +132,14 @@ async function main() {
     // Clear the heat and start the first mission by stepping into its marker.
     await run('g.wanted.clear(); g.police.reset()');
     const giver = await game('(() => { const m = g.missions.nextMission(); const p = g.layout.placeById[m.giver]; return { x: p.x, z: p.z, title: m.title }; })()');
-    await run(`g.player.setPosition(${giver.x}, ${giver.z} + 4.5, Math.PI); g.camera.state.yaw = Math.PI`);
-    await frames(2);
-    await hold('KeyW', 900);
-    await frames(2);
-    const near = await game(`({ d: Math.hypot(g.player.x - ${giver.x}, g.player.z - ${giver.z}), state: g.state, active: g.missions.isActive(), x: g.player.x, z: g.player.z })`);
+    const walkIntoGiver = async () => {
+      await run(`g.player.setPosition(${giver.x}, ${giver.z} + 5, Math.PI); g.camera.state.yaw = Math.PI`);
+      await frames(2);
+      await hold('KeyW', 1300);
+      await frames(2);
+      return game(`({ d: Math.hypot(g.player.x - ${giver.x}, g.player.z - ${giver.z}), state: g.state, active: g.missions.isActive() })`);
+    };
+    const near = await walkIntoGiver();
     check(near.active, `started the mission "${giver.title}" by walking into its marker (${near.d.toFixed(1)} m away, state ${near.state})`);
     check((await game('document.getElementById("objective").textContent.length')) > 10, 'objective line is on the HUD');
     // Save through the pause menu, then load it back.
@@ -167,6 +170,61 @@ async function main() {
     // Quick save with F5 and the autosave.
     await tap('F5');
     check(await client.eval('!!localStorage.getItem("halcyon-heat-autosave")'), 'F5 quick-saved');
+
+    // A save made mid-mission drops the mission on load; standing on the giver marker starts it afresh.
+    check((await game('g.missions.state.stageIndex')) <= 0, 'loading reset the half-done mission');
+    const again = await walkIntoGiver();
+    const m0 = await game('({ active: g.missions.isActive(), stage: g.missions.state.stage && g.missions.state.stage.type })');
+    check(again.active && m0.stage === 'goto', `mission restarted at its first stage (${m0.stage})`);
+    const garage = await game('({ x: g.layout.placeById.garage.x, z: g.layout.placeById.garage.z })');
+    await run(`g.player.setPosition(${garage.x}, ${garage.z} + 6, Math.PI); g.camera.state.yaw = Math.PI`);
+    await hold('KeyW', 1200);
+    let stage = await game('g.missions.state.stage && g.missions.state.stage.type');
+    check(stage === 'say', `reached Teo's garage, dialogue plays (stage ${stage})`);
+    check((await game('document.getElementById("subtitle").textContent.length')) > 5, 'subtitle with a speaker name is showing');
+    // Let the dialogue finish (3.6 s a line) and the Mule appear.
+    for (let t = 0; t < 30 && stage === 'say'; t += 1) {
+      await sleep(500);
+      stage = await game('g.missions.state.stage && g.missions.state.stage.type');
+    }
+    check(stage === 'getcar', `the mission asks for the Mule (stage ${stage})`);
+    const mule = await game('(() => { const v = g.missions.state.missionCars.get("mule"); return v && { x: v.x, z: v.z, yaw: v.yaw }; })()');
+    check(!!mule, 'the Mule pickup was spawned at the garage');
+    await run(`g.player.setPosition(${mule.x} + Math.cos(${mule.yaw}) * 2.2, ${mule.z} - Math.sin(${mule.yaw}) * 2.2, ${mule.yaw})`);
+    await frames(2);
+    await tap('KeyF');
+    check((await game('g.player.vehicle && g.player.vehicle.tag')) === 'mule', 'got into the Mule');
+    stage = await game('g.missions.state.stage && g.missions.state.stage.type');
+    check(stage === 'deliver', `delivery stage with a timer (stage ${stage})`);
+    check(await game('g.missions.state.timer > 0'), 'the mission timer is running');
+    // Drive the Mule to the marina: a short real drive, then place it at the marker and stop.
+    await hold('KeyW', 1500);
+    const marina = await game('({ x: g.layout.placeById.marina.x, z: g.layout.placeById.marina.z })');
+    await run(`const v = g.player.vehicle; v.x = ${marina.x} + 2; v.z = ${marina.z}; v.speed = 0; v.vLat = 0; g.player.x = v.x; g.player.z = v.z`);
+    await frames(3);
+    for (let t = 0; t < 40 && (await game('g.state')) !== 'missionComplete'; t += 1) await sleep(500);
+    check((await game('g.state')) === 'missionComplete', 'mission passed screen is up after the delivery');
+    const earned = await game('g.economy.money');
+    check(earned >= 850 + 500, `reward paid ($${earned})`);
+    check((await game('g.missions.state.completed.length')) === 1, 'Welcome Home is marked complete');
+    await tap('Enter');
+    check((await game('g.state')) === 'playing', 'Enter closed the mission screen');
+    check((await game('g.missions.nextMission().id')) === 'hotwheels', 'Hot Wheels is the next mission');
+    // Side activities: the respray prompt at Teo's and a race start.
+    await run('const v = g.player.vehicle; const p = g.layout.placeById.garage.respray; v.x = p.x; v.z = p.z; v.speed = 0; g.player.x = v.x; g.player.z = v.z');
+    await frames(3);
+    check((await game('document.getElementById("interact").textContent')).includes('Respray'), 'respray prompt appears at the body shop');
+    await run('g.economy.addMoney(1000)');
+    await tap('KeyE');
+    check((await game('g.player.vehicle.health')) === 100, 'respray repaired the car');
+    await run('const v = g.player.vehicle; const r = g.activities.RACES[0].start; v.x = r.x; v.z = r.z; v.speed = 0; g.player.x = v.x; g.player.z = v.z');
+    await frames(3);
+    check((await game('document.getElementById("interact").textContent')).includes('Race'), 'race prompt appears at the start line');
+    await tap('KeyE');
+    check(await game('!!g.activities.state.race'), 'the street race started');
+    check((await game('g.activities.state.racers.length')) === 2, 'two AI racers lined up');
+    await tap('KeyF');
+    check(!(await game('!!g.activities.state.race')), 'leaving the car abandons the race');
     // Let the world run a few seconds more and make sure the frame loop is alive.
     const t0 = await game('g.time');
     await sleep(2000);

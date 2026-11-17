@@ -22,15 +22,15 @@ export function createMapScreen(ui, game) {
   // District names, big enough to read on a thumbnail; the beach strip and the bay read vertically.
   const L = game.layout;
   const labels = [
-    { text: 'SALTMARSH DOCKS', x: L.roadX[5], z: L.roadZ[0] + 44, size: 52, color: '#fff' },
-    { text: 'GLASSWATER', x: (L.roadX[2] + L.roadX[6]) / 2, z: L.roadZ[3] + 14, size: 44, color: '#fff' },
-    { text: 'DOWNTOWN', x: (L.roadX[2] + L.roadX[6]) / 2, z: L.roadZ[3] + 54, size: 36, color: '#fff' },
-    { text: 'NEON ROW', x: (L.roadX[6] + L.roadX[10]) / 2, z: L.roadZ[3] + 34, size: 48, color: '#fff' },
-    { text: 'PALMETTO HEIGHTS', x: L.width / 2, z: L.roadZ[8] + 50, size: 56, color: '#fff' },
-    { text: 'CORAL STRAND', x: L.roadX[1] - 20, z: L.roadZ[3] + 40, size: 34, color: '#fff', angle: -Math.PI / 2 },
-    { text: 'HALCYON BAY', x: -60, z: L.depth * 0.62, size: 40, color: '#eaf8ff', angle: -Math.PI / 2 },
-    { text: 'GLASS CANAL', x: L.width * 0.5, z: (L.canal.z0 + L.canal.z1) / 2 + 2, size: 22, color: '#eaf8ff' },
-    { text: 'CORAL PIER', x: L.pier.x0 + 70, z: L.pier.z0 - 16, size: 20, color: '#ffe8c2' },
+    { text: 'SALTMARSH DOCKS', x: L.roadX[5], z: L.roadZ[0] + 44, size: 46, color: '#fff' },
+    { text: 'GLASSWATER', x: (L.roadX[2] + L.roadX[6]) / 2 - 4, z: L.roadZ[2] + 50, size: 34, color: '#fff' },
+    { text: 'DOWNTOWN', x: (L.roadX[2] + L.roadX[6]) / 2 - 4, z: L.roadZ[3] + 10, size: 28, color: '#fff' },
+    { text: 'NEON ROW', x: (L.roadX[6] + L.roadX[10]) / 2 + 6, z: L.roadZ[3] + 34, size: 40, color: '#fff' },
+    { text: 'PALMETTO HEIGHTS', x: L.width / 2, z: L.roadZ[8] + 50, size: 50, color: '#fff' },
+    { text: 'CORAL STRAND', x: L.roadX[1] - 26, z: L.roadZ[4] + 20, size: 28, color: '#fff', angle: -Math.PI / 2 },
+    { text: 'HALCYON BAY', x: -60, z: L.depth * 0.66, size: 36, color: '#eaf8ff', angle: -Math.PI / 2 },
+    { text: 'GLASS CANAL', x: L.width * 0.5, z: (L.canal.z0 + L.canal.z1) / 2 + 2, size: 20, color: '#eaf8ff' },
+    { text: 'CORAL PIER', x: L.pier.x0 + 70, z: L.pier.z0 - 16, size: 18, color: '#ffe8c2' },
   ];
 
   canvas.addEventListener('click', (e) => {

@@ -255,6 +255,7 @@ export function createMenus(ui, actions) {
         if (current === 'pause' || current === 'mission-complete') actions.resume();
         else api.back();
       } else return false;
+      if (!current) return true;
       const all = [...screens[current].querySelectorAll('.menu button, .slots button')];
       all.forEach((b) => b.classList.toggle('selected', b === buttons[selected]));
       return true;

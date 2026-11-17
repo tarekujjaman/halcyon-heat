@@ -199,7 +199,7 @@ export function signTexture(text, color = '#ff6fb5', background = '#140b1c', wid
   c.fillStyle = background;
   c.fillRect(0, 0, width, height);
   // A wash of the neon colour and a bright border so the panel reads from far away.
-  c.globalAlpha = 0.28;
+  c.globalAlpha = 0.42;
   c.fillStyle = color;
   c.fillRect(0, 0, width, height);
   c.globalAlpha = 1;

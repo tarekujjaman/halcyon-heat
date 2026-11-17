@@ -210,10 +210,16 @@ export function createMissions(game) {
       startStage(0);
       return true;
     },
-    fail(reason) {
+    /** Drop the active mission quietly (a new game or a load); the giver marker comes back. */
+    abort() {
+      if (!state.active) return;
+      const quiet = true;
+      api.fail('', quiet);
+    },
+    fail(reason, quiet = false) {
       const m = state.active;
       if (!m) return;
-      game.economy.stat('missionsFailed');
+      if (!quiet) game.economy.stat('missionsFailed');
       for (const [tag, v] of state.missionCars) {
         if (v.alive && v.occupant !== 'player') game.fleet.remove(v);
         else if (v.alive) {
@@ -234,9 +240,11 @@ export function createMissions(game) {
       hud.setObjective(null);
       hud.setTimer(null);
       hud.clearSubtitle();
-      hud.bigText('MISSION FAILED', reason);
-      if (game.audio) game.audio.ui('fail');
-      setTimeout(() => hud.bigText(null), 3200);
+      if (!quiet) {
+        hud.bigText('MISSION FAILED', reason);
+        if (game.audio) game.audio.ui('fail');
+        setTimeout(() => hud.bigText(null), 3200);
+      }
       placeGivers();
     },
     /** Skip straight to a given stage (used by the screenshot scenes). */
@@ -297,7 +305,7 @@ export function createMissions(game) {
         const next = nextMission();
         if (next && game.state === 'playing') {
           const p = placePoint(next.giver);
-          if (Math.hypot(player.x - p.x, player.z - p.z) < 3.2) api.start(next.id);
+          if (Math.hypot(player.x - p.x, player.z - p.z) < 4.0) api.start(next.id);
         }
         return;
       }

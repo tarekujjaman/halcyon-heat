@@ -5,7 +5,7 @@
 import { CITY, DISTRICTS, BEACH } from '../config.js';
 
 const SCALE = 1.0;
-const PAD = 190;
+const PAD = 170;
 
 export function createMinimap(layout) {
   const w = Math.ceil((layout.width + PAD * 2) * SCALE);

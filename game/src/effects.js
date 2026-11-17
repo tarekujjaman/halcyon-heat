@@ -81,8 +81,8 @@ export function createEffects(scene, textures) {
       spawn(smoke, { x, y, z, vx, vy, vz, size, grow: size * 1.4, life, max: life, r: tint, g: tint, b: tint, alpha });
     },
     tireSmoke(x, z, vx, vz, amount = 1) {
-      if (Math.random() > 0.7 * amount) return;
-      api.smoke(x + (Math.random() - 0.5) * 0.8, 0.35, z + (Math.random() - 0.5) * 0.8, vx * 0.12 + (Math.random() - 0.5) * 1.4, 0.8 + Math.random() * 0.6, vz * 0.12 + (Math.random() - 0.5) * 1.4, 1.4 + Math.random() * 1.0, 1.3 + Math.random() * 0.9, 0.8, 0.34);
+      if (Math.random() > 0.9 * amount) return;
+      api.smoke(x + (Math.random() - 0.5) * 0.8, 0.35, z + (Math.random() - 0.5) * 0.8, vx * 0.12 + (Math.random() - 0.5) * 1.6, 0.9 + Math.random() * 0.7, vz * 0.12 + (Math.random() - 0.5) * 1.6, 1.6 + Math.random() * 1.2, 1.4 + Math.random() * 1.0, 0.82, 0.38);
     },
     /** A one-frame halo (police lights, neon) drawn in the additive layer. */
     flash(x, y, z, r, g, b, size = 1.2) {
